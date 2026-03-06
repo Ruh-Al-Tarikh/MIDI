@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License
 // ============================================================================
 // This is part of Windows MIDI Services and should be used
@@ -22,6 +22,7 @@ public class MidiSettingsSearchService : IMidiSettingsSearchService
 
     private List<MidiSettingsSearchResult> AllItems = [];
 
+    private bool _needsRefresh = true;
 
     private const string TransportGlyph = "\uE7C0";
     private const string EndpointGlyph = "\uE8D6";
@@ -31,6 +32,11 @@ public class MidiSettingsSearchService : IMidiSettingsSearchService
 
     public void Refresh()
     {
+        if (!_needsRefresh)
+        {
+            return;
+        }
+
         // build the initial search list
         AllItems.Clear();
 
@@ -206,6 +212,7 @@ public class MidiSettingsSearchService : IMidiSettingsSearchService
             AllItems.Add(result);
         }
 
+        _needsRefresh = false;
 
         // maybe add all current session names
 
@@ -220,6 +227,10 @@ public class MidiSettingsSearchService : IMidiSettingsSearchService
         _endpointEnumerationService = endpointEnumerationService;
         _transportInfoService = transportInfoService;
         _pageService = pageService;
+
+        _endpointEnumerationService.EndpointAdded += (s, e) => _needsRefresh = true;
+        _endpointEnumerationService.EndpointRemoved += (s, e) => _needsRefresh = true;
+        _endpointEnumerationService.EndpointUpdated += (s, e) => _needsRefresh = true;
     }
 
     public IList<MidiSettingsSearchResult> GetFilteredResults(string filterText)
